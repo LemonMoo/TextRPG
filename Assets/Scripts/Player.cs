@@ -1,34 +1,9 @@
-using System.Collections.Generic;
+// File: Player.cs
 using UnityEngine;
+using System.Collections.Generic;
+using System.Linq;
 
-// Ensure you have the enum files (PlayerRace.cs, PlayerClass.cs, PlayerOrigin.cs) in your project.
-
-[System.Serializable]
-public class Attributes
-{
-    public int Strength;
-    public int Agility;
-    public int Intelligence;
-    public int Stamina;
-    public int Wisdom;     // Drives Mana pool
-    public int Fury;       // Drives Rage pool
-    public int Endurance;  // Drives Energy pool
-    public int Faith;      // Primary stat for Cleric, may influence Mana or other divine mechanics
-
-    // Base constructor for attributes
-    public Attributes(int str = 5, int agi = 5, int intel = 5, int sta = 5, int wis = 3, int fur = 3, int end = 3, int fai = 3)
-    {
-        Strength = str;
-        Agility = agi;
-        Intelligence = intel;
-        Stamina = sta;
-        // Set base resource attributes lower by default, they will be boosted by class.
-        Wisdom = wis;
-        Fury = fur;
-        Endurance = end;
-        Faith = fai;
-    }
-}
+// PlayerRace, PlayerClass, PlayerOrigin, Attributes, Item enums/classes should be defined
 
 public class Player : MonoBehaviour
 {
@@ -50,25 +25,26 @@ public class Player : MonoBehaviour
     public int CurrentEnergy { get; private set; }
     public int MaxEnergy { get; private set; }
 
-    public List<string> Inventory { get; private set; }
+    public List<Item> PlayerInventory { get; private set; }
+    public int Gold { get; private set; }
 
     public int Level { get; private set; }
     public int CurrentExperience { get; private set; }
     public int ExperienceToNextLevel { get; private set; }
 
-    // Constants for how attributes affect resources
     private const int HEALTH_PER_STAMINA_POINT = 10;
-    private const int MANA_PER_WISDOM_POINT = 10;    // Wisdom directly fuels Mana
-    private const int RAGE_PER_FURY_POINT = 10;      // Fury directly fuels Rage
-    private const int ENERGY_PER_ENDURANCE_POINT = 10; // Endurance directly fuels Energy
+    private const int MANA_PER_WISDOM_POINT = 10;
+    private const int RAGE_PER_FURY_POINT = 10;
+    private const int ENERGY_PER_ENDURANCE_POINT = 10;
 
-    private bool isInitialized = false;
+    private bool isInitializedInternal = false; // Renamed internal flag
+    public bool IsInitialized => isInitializedInternal; // Public getter
 
     public void InitializePlayer(string playerName, PlayerRace race, PlayerClass playerClass, PlayerOrigin origin, Attributes baseAttributes)
     {
-        if (isInitialized)
+        if (isInitializedInternal)
         {
-            Debug.LogWarning("Player already initialized.");
+            Debug.LogWarning("Player already initialized.", this);
             return;
         }
 
@@ -76,99 +52,72 @@ public class Player : MonoBehaviour
         Race = race;
         Class = playerClass;
         Origin = origin;
-        // Attributes are passed in (likely from new Attributes() in CharacterCreationUI)
-        // then specialized by ApplyAttributeModifiers.
         Attributes = baseAttributes;
 
-        ApplyAttributeModifiers(); // Specialize attributes based on class
+        ApplyAttributeModifiers();
+        CalculateDerivedStats();
+        RestoreToMaxStats();
 
-        Inventory = new List<string>();
+        PlayerInventory = new List<Item>();
+        Gold = 0; // Or a starting gold amount
+
         Level = 1;
         CurrentExperience = 0;
         ExperienceToNextLevel = 100;
 
-        CalculateDerivedStats();
-        RestoreToMaxStats();
-
-        isInitialized = true;
-        Debug.Log($"Player '{PlayerName}' the {Race} {Class} from {Origin} has been initialized with specialized attributes.");
+        isInitializedInternal = true; // Set the flag
+        Debug.Log($"Player '{PlayerName}' initialized. Class: {Class}, HP: {CurrentHealth}/{MaxHealth}, Gold: {Gold}. IsInitialized: {IsInitialized}", this);
     }
 
     private void ApplyAttributeModifiers()
     {
-        if (Attributes == null) Attributes = new Attributes(); // Should not happen if initialized correctly
+        if (Attributes == null) Attributes = new Attributes();
 
-        // --- Attribute Specialization by Class ---
-        // 1. Set all primary resource attributes to a low baseline.
-        //    This ensures only the class-relevant ones will be high.
-        //    Adjust these base values as needed for balance (e.g., if you want some minimal off-class resource).
-        int baseResourceStat = 3; // A minimal value for non-primary resource stats
-        Attributes.Wisdom = baseResourceStat;     // For Mana
-        Attributes.Fury = baseResourceStat;       // For Rage
-        Attributes.Endurance = baseResourceStat;  // For Energy
-        // Faith is also a primary stat, so it's handled per class. If not Cleric, it can be low.
+        int baseResourceStat = 3;
+        Attributes.Wisdom = baseResourceStat;
+        Attributes.Fury = baseResourceStat;
+        Attributes.Endurance = baseResourceStat;
         Attributes.Faith = baseResourceStat;
 
-
-        // 2. Boost attributes based on the selected class.
-        //    These are ADDITIVE to the base values set above or the default constructor values for non-resource stats.
-        //    The values here are significant boosts for primary stats.
-        int primaryStatBoost = 7; // e.g., total of 10 (3 base + 7 boost)
-        int secondaryStatBoost = 4; // e.g., total of 7-9
+        int primaryStatBoost = 7;
+        int secondaryStatBoost = 4;
 
         switch (Class)
         {
             case PlayerClass.Fighter:
-                Attributes.Strength += primaryStatBoost; // Main damage stat
-                Attributes.Fury += primaryStatBoost;     // Main resource stat
-                Attributes.Stamina += secondaryStatBoost;  // More health
+                Attributes.Strength += primaryStatBoost;
+                Attributes.Fury += primaryStatBoost;
+                Attributes.Stamina += secondaryStatBoost;
                 break;
-
             case PlayerClass.Wizard:
-                Attributes.Intelligence += primaryStatBoost; // Main damage stat
-                Attributes.Wisdom += primaryStatBoost;       // Main resource stat (Mana)
+                Attributes.Intelligence += primaryStatBoost;
+                Attributes.Wisdom += primaryStatBoost;
                 break;
-
             case PlayerClass.Scout:
-                Attributes.Agility += primaryStatBoost;    // Main damage/utility stat
-                Attributes.Endurance += primaryStatBoost;  // Main resource stat (Energy)
-                // Scouts might also get a perception boost if that attribute is added
+                Attributes.Agility += primaryStatBoost;
+                Attributes.Endurance += primaryStatBoost;
                 break;
-
             case PlayerClass.Ranger:
-                Attributes.Agility += primaryStatBoost;    // Main damage/utility stat
-                Attributes.Wisdom += secondaryStatBoost;   // Secondary resource stat (Mana for spells)
-                // Rangers might also get a perception boost
+                Attributes.Agility += primaryStatBoost; // Main stat
+                Attributes.Wisdom += secondaryStatBoost;  // For mana pool for spells
                 break;
-
             case PlayerClass.Cleric:
-                Attributes.Faith += primaryStatBoost;      // Main spell power stat
-                Attributes.Wisdom += primaryStatBoost;     // Main resource stat (Mana)
-                Attributes.Stamina += secondaryStatBoost;  // More survivability
+                Attributes.Faith += primaryStatBoost;    // Main spell power stat
+                Attributes.Wisdom += primaryStatBoost;   // Main resource pool (Mana)
+                Attributes.Stamina += secondaryStatBoost;
                 break;
         }
-
-        // 3. (Optional) Apply racial modifiers AFTER class specialization
-        // switch (Race)
-        // {
-        //    case PlayerRace.Dwarf: Attributes.Stamina += 2; Attributes.Strength += 1; break;
-        //    case PlayerRace.Elf: Attributes.Agility += 1; Attributes.Intelligence += 1; break;
-        //    // ... etc.
-        // }
-        Debug.Log($"Attributes applied for {Class}. Wisdom: {Attributes.Wisdom}, Fury: {Attributes.Fury}, Endurance: {Attributes.Endurance}, Faith: {Attributes.Faith}");
+        // Debug.Log($"Attributes applied for {Class}. STR:{Attributes.Strength} AGI:{Attributes.Agility} INT:{Attributes.Intelligence} STA:{Attributes.Stamina} WIS:{Attributes.Wisdom} FUR:{Attributes.Fury} END:{Attributes.Endurance} FAI:{Attributes.Faith}", this);
     }
 
     public void CalculateDerivedStats()
     {
-        if (Attributes == null)
-        {
-            Debug.LogError("Attributes not set before calculating derived stats!");
-            Attributes = new Attributes();
-        }
+        if (Attributes == null) { Debug.LogError("Attributes not set!", this); Attributes = new Attributes(); }
         MaxHealth = Attributes.Stamina * HEALTH_PER_STAMINA_POINT;
         MaxMana = Attributes.Wisdom * MANA_PER_WISDOM_POINT;
         MaxRage = Attributes.Fury * RAGE_PER_FURY_POINT;
         MaxEnergy = Attributes.Endurance * ENERGY_PER_ENDURANCE_POINT;
+        // Debug.Log($"Player.CalculateDerivedStats: Stamina: {Attributes.Stamina}, MaxHealth: {MaxHealth}", this);
     }
 
     public void RestoreToMaxStats()
@@ -177,28 +126,30 @@ public class Player : MonoBehaviour
         CurrentMana = MaxMana;
         CurrentRage = MaxRage;
         CurrentEnergy = MaxEnergy;
+        // Debug.Log($"Player.RestoreToMaxStats: CurrentHealth: {CurrentHealth}", this);
     }
 
     public void TakeDamage(int amount)
     {
-        if (!isInitialized) return;
+        if (!isInitializedInternal) return;
         CurrentHealth -= amount;
+        // Debug.Log($"Player.TakeDamage: Took {amount} damage. CurrentHealth: {CurrentHealth}/{MaxHealth}", this);
         if (CurrentHealth < 0) CurrentHealth = 0;
-        if (CurrentHealth <= 0) Debug.Log($"{PlayerName} has been defeated!");
+        // if (CurrentHealth <= 0) Debug.Log($"{PlayerName} defeated (in TakeDamage)!", this);
     }
 
     public void Heal(int amount)
     {
-        if (!isInitialized) return;
+        if (!isInitializedInternal) return;
         CurrentHealth += amount;
         if (CurrentHealth > MaxHealth) CurrentHealth = MaxHealth;
     }
 
     public void GainExperience(int amount)
     {
-        if (!isInitialized) return;
+        if (!isInitializedInternal || amount <= 0) return;
         CurrentExperience += amount;
-        Debug.Log($"{PlayerName} gained {amount} experience.");
+        Debug.Log($"{PlayerName} gained {amount} experience.", this);
         CheckForLevelUp();
     }
 
@@ -208,124 +159,139 @@ public class Player : MonoBehaviour
         {
             Level++;
             CurrentExperience -= ExperienceToNextLevel;
-            ExperienceToNextLevel = Mathf.RoundToInt(ExperienceToNextLevel * 1.5f);
+            ExperienceToNextLevel = Mathf.RoundToInt(ExperienceToNextLevel * 1.5f); // Example progression
 
-            // Universal attribute gain on level up (can be specialized too)
-            Attributes.Strength++;
-            Attributes.Agility++;
-            Attributes.Intelligence++;
-            Attributes.Stamina++;
-            Attributes.Wisdom++;
-            Attributes.Fury++;
-            Attributes.Endurance++;
-            Attributes.Faith++;
-
-            // If a stat was set to a very low base (e.g. 1) and the class doesn't use it,
-            // it will still increment. You might want to refine level-up gains
-            // to only boost stats relevant to the class or give players points to spend.
-            // For now, simple increment for all.
+            Attributes.Strength++; Attributes.Agility++; Attributes.Intelligence++; Attributes.Stamina++;
+            Attributes.Wisdom++; Attributes.Fury++; Attributes.Endurance++; Attributes.Faith++;
 
             CalculateDerivedStats();
             RestoreToMaxStats();
-            Debug.Log($"{PlayerName} reached Level {Level}! Next level at {ExperienceToNextLevel} EXP. All attributes increased by 1.");
+            LogToCombatOrGameConsole($"{PlayerName} reached Level {Level}! Stats increased. HP/Resources refilled.");
         }
     }
+    // Helper to decide where to log (could be moved to GameManager if preferred, or Player needs GM ref)
+    private void LogToCombatOrGameConsole(string message)
+    {
+        if (GameManager.Instance != null)
+        {
+            // This is a simplified version. Ideally, Player shouldn't directly decide based on GameManager's state.
+            // Events are better. For now, this will use the GameManager's logging.
+            GameManager.Instance.SendMessageToPlayerLog(message); // We'll add this method to GameManager
+        }
+        else
+        {
+            Debug.Log(message, this); // Fallback
+        }
+    }
+
 
     public bool UseMana(int amount)
     {
-        if (!isInitialized || CurrentMana < amount)
-        {
-            if (isInitialized && MaxMana > 0) Debug.Log("Not enough mana!");
-            else if (isInitialized && MaxMana == 0) Debug.Log("You do not have a mana pool.");
-            return false;
-        }
+        if (!isInitializedInternal || amount <= 0) return false;
+        if (MaxMana == 0) { LogToCombatOrGameConsole("You do not use mana."); return false; }
+        if (CurrentMana < amount) { LogToCombatOrGameConsole("Not enough mana!"); return false; }
         CurrentMana -= amount;
         return true;
     }
-
     public bool UseRage(int amount)
     {
-        if (!isInitialized || CurrentRage < amount)
-        {
-            if (isInitialized && MaxRage > 0) Debug.Log("Not enough rage!");
-            else if (isInitialized && MaxRage == 0) Debug.Log("You do not have a rage pool.");
-            return false;
-        }
+        if (!isInitializedInternal || amount <= 0) return false;
+        if (MaxRage == 0) { LogToCombatOrGameConsole("You do not use rage."); return false; }
+        if (CurrentRage < amount) { LogToCombatOrGameConsole("Not enough rage!"); return false; }
         CurrentRage -= amount;
         return true;
     }
-
     public bool UseEnergy(int amount)
     {
-        if (!isInitialized || CurrentEnergy < amount)
-        {
-            if (isInitialized && MaxEnergy > 0) Debug.Log("Not enough energy!");
-            else if (isInitialized && MaxEnergy == 0) Debug.Log("You do not have an energy pool.");
-            return false;
-        }
+        if (!isInitializedInternal || amount <= 0) return false;
+        if (MaxEnergy == 0) { LogToCombatOrGameConsole("You do not use energy."); return false; }
+        if (CurrentEnergy < amount) { LogToCombatOrGameConsole("Not enough energy!"); return false; }
         CurrentEnergy -= amount;
         return true;
     }
 
-    public void AddItemToInventory(string itemName)
+
+    public void AddGold(int amount)
     {
-        if (!isInitialized) return;
-        Inventory.Add(itemName);
-        Debug.Log($"{itemName} added to inventory.");
+        if (amount > 0) Gold += amount;
     }
 
-    public bool RemoveItemFromInventory(string itemName)
+    public bool SpendGold(int amount)
     {
-        if (!isInitialized) return false;
-        bool removed = Inventory.Remove(itemName);
-        if (removed) Debug.Log($"{itemName} removed from inventory.");
-        else Debug.Log($"{itemName} not found in inventory.");
-        return removed;
+        if (amount > 0 && Gold >= amount) { Gold -= amount; return true; }
+        return false;
+    }
+
+    public void AddItemToInventory(Item itemToAdd)
+    {
+        if (!isInitializedInternal || itemToAdd == null) return;
+        if (itemToAdd.IsStackable)
+        {
+            Item existingItem = PlayerInventory.FirstOrDefault(i => i.Name == itemToAdd.Name && i.IsStackable);
+            if (existingItem != null) existingItem.AddQuantity(itemToAdd.Quantity);
+            else PlayerInventory.Add(new Item(itemToAdd.Name, itemToAdd.Description, itemToAdd.Type, itemToAdd.GoldValue, true, itemToAdd.Quantity));
+        }
+        else
+        {
+            PlayerInventory.Add(new Item(itemToAdd.Name, itemToAdd.Description, itemToAdd.Type, itemToAdd.GoldValue, false, 1));
+        }
+    }
+
+    public bool RemoveItemFromInventory(string itemName, int quantityToRemove = 1)
+    {
+        if (!isInitializedInternal || quantityToRemove <= 0) return false;
+        Item itemInInventory = PlayerInventory.FirstOrDefault(i => i.Name == itemName);
+        if (itemInInventory == null) return false;
+
+        if (itemInInventory.IsStackable)
+        {
+            if (itemInInventory.Quantity >= quantityToRemove)
+            {
+                itemInInventory.Quantity -= quantityToRemove;
+                if (itemInInventory.Quantity <= 0) PlayerInventory.Remove(itemInInventory);
+                return true;
+            }
+            return false;
+        }
+        else // Non-stackable
+        {
+            if (quantityToRemove == 1) return PlayerInventory.Remove(itemInInventory);
+            // To remove multiple non-stackable, loop this or find multiple instances
+            return false;
+        }
     }
 
     public string GetPlayerStats()
     {
-        if (!isInitialized) return "Player data not available yet.";
-
-        System.Text.StringBuilder statsBuilder = new System.Text.StringBuilder();
-        statsBuilder.AppendLine("--- Player Stats ---");
-        statsBuilder.AppendLine($"Name: {PlayerName}");
-        statsBuilder.AppendLine($"Race: {Race}");
-        statsBuilder.AppendLine($"Class: {Class}");
-        statsBuilder.AppendLine($"Origin: {Origin}");
-        statsBuilder.AppendLine($"Level: {Level}");
-        statsBuilder.AppendLine($"Experience: {CurrentExperience} / {ExperienceToNextLevel}");
-        statsBuilder.AppendLine("--------------------");
-        statsBuilder.AppendLine($"Health: {CurrentHealth} / {MaxHealth}");
-        statsBuilder.AppendLine($"Mana:   {CurrentMana} / {MaxMana} (from Wisdom: {Attributes.Wisdom})");
-        statsBuilder.AppendLine($"Rage:   {CurrentRage} / {MaxRage} (from Fury: {Attributes.Fury})");
-        statsBuilder.AppendLine($"Energy: {CurrentEnergy} / {MaxEnergy} (from Endurance: {Attributes.Endurance})");
-        statsBuilder.AppendLine("--------------------");
-        statsBuilder.AppendLine("Attributes:");
-        statsBuilder.AppendLine($"  Strength:     {Attributes.Strength}");
-        statsBuilder.AppendLine($"  Agility:      {Attributes.Agility}");
-        statsBuilder.AppendLine($"  Intelligence: {Attributes.Intelligence}");
-        statsBuilder.AppendLine($"  Stamina:      {Attributes.Stamina}");
-        statsBuilder.AppendLine($"  Wisdom:       {Attributes.Wisdom}");
-        statsBuilder.AppendLine($"  Fury:         {Attributes.Fury}");
-        statsBuilder.AppendLine($"  Endurance:    {Attributes.Endurance}");
-        statsBuilder.AppendLine($"  Faith:        {Attributes.Faith}");
-        statsBuilder.AppendLine("--------------------");
-        return statsBuilder.ToString();
+        if (!isInitializedInternal) return "Player data not available yet.";
+        System.Text.StringBuilder sb = new System.Text.StringBuilder();
+        sb.AppendLine("--- Player Stats ---");
+        sb.AppendLine($"Name: {PlayerName} ({Race} {Class} from {Origin})");
+        sb.AppendLine($"Level: {Level} (XP: {CurrentExperience}/{ExperienceToNextLevel})");
+        sb.AppendLine("--------------------");
+        sb.AppendLine($"Health: {CurrentHealth} / {MaxHealth}");
+        if (MaxMana > 0) sb.AppendLine($"Mana:   {CurrentMana} / {MaxMana} (WIS: {Attributes.Wisdom})");
+        if (MaxRage > 0) sb.AppendLine($"Rage:   {CurrentRage} / {MaxRage} (FUR: {Attributes.Fury})");
+        if (MaxEnergy > 0) sb.AppendLine($"Energy: {CurrentEnergy} / {MaxEnergy} (END: {Attributes.Endurance})");
+        sb.AppendLine($"Gold: {Gold}g");
+        sb.AppendLine("--------------------");
+        sb.AppendLine("Attributes:");
+        sb.AppendLine($"  Strength: {Attributes.Strength}  |  Agility: {Attributes.Agility}  |  Intelligence: {Attributes.Intelligence}");
+        sb.AppendLine($"  Stamina: {Attributes.Stamina} |  Wisdom: {Attributes.Wisdom} |  Fury: {Attributes.Fury}");
+        sb.AppendLine($"  Endurance: {Attributes.Endurance} |  Faith: {Attributes.Faith}");
+        sb.AppendLine("--------------------");
+        return sb.ToString();
     }
 
     public string GetInventoryList()
     {
-        if (!isInitialized) return "Player data not available yet.";
-        if (Inventory.Count == 0)
-        {
-            return "Inventory is empty.";
-        }
-        System.Text.StringBuilder invResult = new System.Text.StringBuilder("Inventory:\n");
-        foreach (string item in Inventory)
-        {
-            invResult.AppendLine("- " + item);
-        }
-        return invResult.ToString();
+        if (!isInitializedInternal) return "Player data not available yet.";
+        System.Text.StringBuilder sb = new System.Text.StringBuilder();
+        sb.AppendLine("--- Inventory ---");
+        if (PlayerInventory.Count == 0) sb.AppendLine("Your inventory is empty.");
+        else foreach (Item item in PlayerInventory) sb.AppendLine($"- {item.ToString()}"); // Uses Item.ToString()
+        sb.AppendLine($"\nGold: {Gold}g");
+        sb.AppendLine("--------------------");
+        return sb.ToString();
     }
 }

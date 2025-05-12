@@ -134,10 +134,22 @@ public class LocationManager : MonoBehaviour
             Debug.Log($"Player internally moved to: {CurrentLocation.Name} (ID: {CurrentLocation.LocationID})", this);
 
             // --- Trigger Encounter Check ---
-            // Check for combat only if GameManager exists and player is in "Playing" state
-            if (GameManager.Instance != null && GameManager.Instance.CurrentState == GameState.Playing)
+            if (GameManager.Instance != null) // Check GameManager instance exists
             {
-                GameManager.Instance.TryToTriggerEncounter(newLocation);
+                Debug.Log($"LocationManager: Checking conditions for encounter trigger. GameManager.CurrentState: {GameManager.Instance.CurrentState}", this);
+                if (GameManager.Instance.CurrentState == GameState.Playing)
+                {
+                    Debug.Log($"LocationManager: Conditions met. Calling GameManager.Instance.TryToTriggerEncounter for {newLocation.Name}", this);
+                    GameManager.Instance.TryToTriggerEncounter(newLocation);
+                }
+                else
+                {
+                    Debug.Log($"LocationManager: Conditions NOT met for encounter. CurrentState is not Playing.", this);
+                }
+            }
+            else
+            {
+                Debug.LogWarning("LocationManager: GameManager.Instance is null. Cannot trigger encounter check.", this);
             }
             return true;
         }

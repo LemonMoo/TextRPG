@@ -1,11 +1,13 @@
+// File: CommandParser.cs
 using UnityEngine;
 using System.Linq; // Required for ToLower, Split, etc.
 using System.Collections.Generic; // Required for lists if we add more complex command handling
 
 public class CommandParser : MonoBehaviour
 {
-    public Player player; // Assign your Player GameObject/script here in the Inspector
-    public LocationManager locationManager; // Assign your LocationManager GameObject/script here
+    // Assign these in the Inspector or ensure they are found by FindFirstObjectByType
+    public Player player;
+    public LocationManager locationManager;
 
     // A simple list of recognized verbs for the help command
     private List<string> recognizedCommands = new List<string>()
@@ -16,11 +18,11 @@ public class CommandParser : MonoBehaviour
         "east (or e)",
         "west (or w)",
         "look (or l)",
-        "inventory (or inv)",
-        "stats",
-        "help",
-        "quit"
-        // Add more commands as they are implemented
+        "inventory (or inv, i)", // Added 'i' as a shortcut
+        "stats (or stat, char)", // Added shortcuts
+        "help (or ?)",           // Added '?' as a shortcut
+        "quit (or exit)"
+        // Add more commands as they are implemented (e.g., "get [item]", "use [item]")
     };
 
 
@@ -29,20 +31,18 @@ public class CommandParser : MonoBehaviour
         // Attempt to find Player and LocationManager if not assigned in Inspector
         if (player == null)
         {
-            // Updated to use FindFirstObjectByType as recommended
             player = FindFirstObjectByType<Player>();
             if (player == null)
             {
-                Debug.LogError("CommandParser: Player script not found in the scene!");
+                Debug.LogError("CommandParser: Player script not found in the scene!", this);
             }
         }
         if (locationManager == null)
         {
-            // Updated to use FindFirstObjectByType as recommended
             locationManager = FindFirstObjectByType<LocationManager>();
             if (locationManager == null)
             {
-                Debug.LogError("CommandParser: LocationManager script not found in the scene!");
+                Debug.LogError("CommandParser: LocationManager script not found in the scene!", this);
             }
         }
     }
@@ -59,7 +59,7 @@ public class CommandParser : MonoBehaviour
             return "Please enter a command.";
         }
 
-        string input = rawInput.Trim().ToLower(); // Normalize input: remove whitespace, convert to lowercase
+        string input = rawInput.Trim().ToLower();
         string[] commandParts = input.Split(new[] { ' ' }, System.StringSplitOptions.RemoveEmptyEntries);
 
         if (commandParts.Length == 0)
@@ -68,9 +68,10 @@ public class CommandParser : MonoBehaviour
         }
 
         string verb = commandParts[0];
-        string argument = commandParts.Length > 1 ? commandParts[1] : null;
-        // For commands with more than one argument, you might need:
-        // string[] arguments = commandParts.Skip(1).ToArray();
+        // string argument = commandParts.Length > 1 ? commandParts[1] : null;
+        // For commands with more than one word in argument (e.g. "get shiny rock")
+        string argument = commandParts.Length > 1 ? string.Join(" ", commandParts.Skip(1)) : null;
+
 
         // --- Command Processing ---
         switch (verb)
@@ -78,14 +79,9 @@ public class CommandParser : MonoBehaviour
             case "go":
                 if (argument != null)
                 {
-                    if (locationManager.TryMovePlayer(argument))
+                    if (locationManager != null && locationManager.TryMovePlayer(argument))
                     {
-                        // LocationManager.DisplayCurrentLocationInfo() is called internally on successful move.
-                        // We can return the new location's brief info or just a success message.
-                        // For now, DisplayCurrentLocationInfo logs to console.
-                        // We'll adjust this when we build the UI.
-                        // Return the description of the new location directly
-                        return GetLocationLookDescription();
+                        return GetLocationLookDescription(); // Returns new location's full description
                     }
                     else
                     {
@@ -100,19 +96,19 @@ public class CommandParser : MonoBehaviour
             // Single-word directional commands
             case "north":
             case "n":
-                if (locationManager.TryMovePlayer("north")) { return GetLocationLookDescription(); }
+                if (locationManager != null && locationManager.TryMovePlayer("north")) { return GetLocationLookDescription(); }
                 else { return "You can't go north."; }
             case "south":
             case "s":
-                if (locationManager.TryMovePlayer("south")) { return GetLocationLookDescription(); }
+                if (locationManager != null && locationManager.TryMovePlayer("south")) { return GetLocationLookDescription(); }
                 else { return "You can't go south."; }
             case "east":
             case "e":
-                if (locationManager.TryMovePlayer("east")) { return GetLocationLookDescription(); }
+                if (locationManager != null && locationManager.TryMovePlayer("east")) { return GetLocationLookDescription(); }
                 else { return "You can't go east."; }
             case "west":
             case "w":
-                if (locationManager.TryMovePlayer("west")) { return GetLocationLookDescription(); }
+                if (locationManager != null && locationManager.TryMovePlayer("west")) { return GetLocationLookDescription(); }
                 else { return "You can't go west."; }
 
             case "look":
@@ -121,48 +117,53 @@ public class CommandParser : MonoBehaviour
 
             case "inventory":
             case "inv":
+            case "i": // Added 'i'
                 if (player != null)
                 {
-                    if (player.Inventory.Count == 0)
-                    {
-                        return "Your inventory is empty.";
-                    }
-                    System.Text.StringBuilder invResult = new System.Text.StringBuilder("Inventory:\n");
-                    foreach (string item in player.Inventory)
-                    {
-                        invResult.AppendLine("- " + item);
-                    }
-                    return invResult.ToString();
+                    return player.GetInventoryList(); // Uses the updated method from Player.cs
                 }
-                return "Cannot access inventory.";
+                return "Cannot access inventory. Player script not found.";
 
             case "stats":
+            case "stat":
             case "character":
+            case "char": // Added shortcuts
                 if (player != null)
                 {
-                    return player.GetPlayerStats(); // This method already returns a formatted string.
+                    return player.GetPlayerStats(); // Uses the updated method from Player.cs (should include gold)
                 }
-                return "Cannot display stats.";
+                return "Cannot display stats. Player script not found.";
 
             case "help":
+            case "?": // Added '?'
                 System.Text.StringBuilder helpBuilder = new System.Text.StringBuilder("Available commands:\n");
                 foreach (string cmd in recognizedCommands)
                 {
                     helpBuilder.AppendLine("- " + cmd);
                 }
-                helpBuilder.AppendLine("\nType 'quit' to exit the game.");
+                helpBuilder.AppendLine("\nType 'quit' or 'exit' to leave the game.");
                 return helpBuilder.ToString();
 
             case "quit":
             case "exit":
-                // In a standalone build, this would close the application.
-                // In the Unity Editor, this will stop play mode.
 #if UNITY_EDITOR
                 UnityEditor.EditorApplication.isPlaying = false;
 #else
                 Application.Quit();
 #endif
-                return "Quitting game..."; // This message might not be seen if the game closes too fast.
+                return "Quitting game...";
+
+            // --- Placeholder for future commands ---
+            // case "get":
+            // case "take":
+            //     if (argument != null) return $"You try to get '{argument}'. (Not implemented)";
+            //     else return "Get what?";
+            // case "use":
+            //     if (argument != null) return $"You try to use '{argument}'. (Not implemented)";
+            //     else return "Use what?";
+            // case "talk":
+            //     if (argument != null) return $"You try to talk to '{argument}'. (Not implemented)";
+            //     else return "Talk to whom?";
 
             default:
                 return $"Unknown command: '{verb}'. Type 'help' for a list of commands.";
@@ -171,9 +172,7 @@ public class CommandParser : MonoBehaviour
 
     /// <summary>
     /// Helper function to get the full description of the current location.
-    /// This is used by 'look' and after successful movement.
     /// </summary>
-    /// <returns>A string describing the current location.</returns>
     private string GetLocationLookDescription()
     {
         if (locationManager != null && locationManager.CurrentLocation != null)
@@ -183,23 +182,20 @@ public class CommandParser : MonoBehaviour
             lookResult.AppendLine(locationManager.CurrentLocation.Description);
             lookResult.AppendLine(locationManager.CurrentLocation.GetExitsDescription());
             // Future: Add items in location, NPCs, etc.
-            // if (locationManager.CurrentLocation.ItemsInLocation.Count > 0) { ... }
-            // if (locationManager.CurrentLocation.NPCsInLocation.Count > 0) { ... }
+            // lookResult.AppendLine(locationManager.CurrentLocation.GetItemsDescription());
+            // lookResult.AppendLine(locationManager.CurrentLocation.GetNPCsDescription());
             return lookResult.ToString();
         }
         return "You don't seem to be anywhere particular, or the location manager isn't working.";
     }
 
-
-    // Example of how you might call this from another script (e.g., your UI input field)
-    public void ProcessPlayerInput(string inputText)
-    {
-        string commandResult = ParseCommand(inputText);
-        Debug.Log("Output: \n" + commandResult); // Replace with UI display logic
-
-        // Note: If a move command was successful, the returned string from ParseCommand
-        // will now contain the new location's description due to the call to GetLocationLookDescription().
-        // The LocationManager's DisplayCurrentLocationInfo() is still useful for initial setup or
-        // if other systems need to trigger a location display without player input.
-    }
+    // Example of how this might be called by GameConsoleUI (already in your GameConsoleUI.cs)
+    // public void ProcessPlayerInputFromUI(string inputText)
+    // {
+    //     if (GameManager.Instance != null && GameManager.Instance.CurrentState == GameState.Playing)
+    //     {
+    //         string commandResult = ParseCommand(inputText);
+    //         // Send commandResult to GameConsoleUI.AddMessageToOutput(commandResult)
+    //     }
+    // }
 }

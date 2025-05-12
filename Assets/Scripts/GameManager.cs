@@ -1,283 +1,300 @@
+// File: GameManager.cs
 using UnityEngine;
-using System.Collections.Generic; // Required for List of enemies
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 
-public enum GameState
-{
-    CharacterCreation,
-    Playing,
-    Combat,
-    Paused
-}
+// Enums GameState, CombatActionType should be defined
 
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
 
-    public GameState CurrentState { get; private set; }
+    public GameState CurrentState { get; private set; } = GameState.Preload;
     private GameState previousState;
+    private string playerLastLocationID = "";
 
     [Header("System References")]
     public Player player;
     public LocationManager locationManager;
-    public CommandParser commandParser; // Added reference for convenience
+    public CommandParser commandParser;
 
     [Header("UI Canvases / Managers")]
     public GameObject characterCreationCanvas;
     public GameConsoleUI gameConsoleUI;
     public GameObject combatUICanvas;
+    public CombatLoggerUI combatLogger;
+    public PlayerStatusUI playerStatusUI;
+
+    [Header("Game Settings")]
+    public string townRespawnLocationID = "town_square";
+    public float delayBetweenActions = 0.75f;
+    public float delayAfterCombatMessage = 1.0f; // e.g. after "Combat Started"
 
     public List<Enemy> CurrentEnemiesInCombat { get; private set; }
+    private List<string> slainEnemyNames = new List<string>();
+    private int lastCombatTotalXPGained = 0;
+    private int lastCombatGoldDropped = 0;
+    private List<string> lastCombatItemNamesDropped = new List<string>();
+    private bool justFinishedCombat = false;
+
+    private Coroutine combatSequenceCoroutine;
 
     void Awake()
     {
-        Debug.Log("GameManager: Awake() called.", this);
-        if (Instance == null)
-        {
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
-        }
-        else
-        {
-            Destroy(gameObject);
-            return;
-        }
-
-        if (player == null)
-        {
-            player = FindFirstObjectByType<Player>();
-            if (player == null) Debug.LogError("GameManager: Player not found in scene and not assigned!", this);
-            else Debug.Log("GameManager: Player found via FindFirstObjectByType.", this);
-        }
-        if (gameConsoleUI == null)
-        {
-            gameConsoleUI = FindFirstObjectByType<GameConsoleUI>();
-            if (gameConsoleUI == null) Debug.LogError("GameManager: GameConsoleUI not found in scene and not assigned!", this);
-            else Debug.Log("GameManager: GameConsoleUI found via FindFirstObjectByType.", this);
-        }
-        if (locationManager == null)
-        {
-            locationManager = FindFirstObjectByType<LocationManager>();
-            if (locationManager == null) Debug.LogError("GameManager: LocationManager not found in scene and not assigned!", this);
-            else Debug.Log("GameManager: LocationManager found via FindFirstObjectByType.", this);
-        }
-        if (commandParser == null)
-        {
-            commandParser = FindFirstObjectByType<CommandParser>();
-            if (commandParser == null) Debug.LogError("GameManager: CommandParser not found in scene and not assigned!", this);
-            else Debug.Log("GameManager: CommandParser found via FindFirstObjectByType.", this);
-        }
-
+        if (Instance == null) { Instance = this; DontDestroyOnLoad(gameObject); } else { Destroy(gameObject); return; }
+        if (player == null) player = FindFirstObjectByType<Player>();
+        if (gameConsoleUI == null) gameConsoleUI = FindFirstObjectByType<GameConsoleUI>();
+        if (locationManager == null) locationManager = FindFirstObjectByType<LocationManager>();
+        if (commandParser == null) commandParser = FindFirstObjectByType<CommandParser>();
+        if (combatLogger == null && combatUICanvas != null) combatLogger = combatUICanvas.GetComponentInChildren<CombatLoggerUI>(true);
+        if (playerStatusUI == null) { GameObject hudGO = GameObject.Find("PlayerHUDCanvas"); if (hudGO != null) playerStatusUI = hudGO.GetComponent<PlayerStatusUI>(); }
+        // Null checks for critical components
+        if (player == null) Debug.LogError("GM Awake: Player missing!", this);
         CurrentEnemiesInCombat = new List<Enemy>();
-        Debug.Log("GameManager: Awake() completed. All references checked.", this);
     }
 
     void Start()
     {
-        Debug.Log("GameManager: Start() called.", this);
         if (combatUICanvas != null) combatUICanvas.SetActive(false);
-        else Debug.LogWarning("GameManager: Combat UI Canvas is not assigned. Combat state will not show specific UI.", this);
-
+        if (playerStatusUI?.gameObject != null) playerStatusUI.gameObject.SetActive(false);
         ChangeState(GameState.CharacterCreation);
     }
 
-    public void ChangeState(GameState newState)
+    public void ChangeState(GameState newState) // PUBLIC
     {
-        Debug.Log($"GameManager: Attempting to change state from {CurrentState} to {newState}", this);
-        if (CurrentState == newState && newState != GameState.Combat && CurrentEnemiesInCombat.Count == 0)
-        {
-            Debug.Log($"GameManager: State change to {newState} aborted (already in this state or not applicable).", this);
-            return;
-        }
+        Debug.Log($"GM: ChangeState from {CurrentState} to {newState}", this);
+        if (CurrentState == newState && !(newState == GameState.Combat && CurrentEnemiesInCombat.Any(e => e != null && !e.IsDefeated()))) { return; }
+        if (CurrentState == GameState.Playing && newState == GameState.Combat) { playerLastLocationID = (locationManager?.CurrentLocation != null) ? locationManager.CurrentLocation.LocationID : townRespawnLocationID; }
+        previousState = CurrentState; CurrentState = newState;
 
-        previousState = CurrentState;
-        CurrentState = newState;
-        Debug.Log($"GameManager: State changed successfully from {previousState} to {CurrentState}", this);
-
-        // Log current state of UI objects before changing them
-        Debug.Log($"GameManager: Before UI switch - CC_Canvas Active: {(characterCreationCanvas != null ? characterCreationCanvas.activeSelf.ToString() : "N/A")}, GameConsoleUI Active: {(gameConsoleUI != null && gameConsoleUI.gameObject != null ? gameConsoleUI.gameObject.activeSelf.ToString() : "N/A")}", this);
-
-        if (characterCreationCanvas != null) characterCreationCanvas.SetActive(false);
-        if (gameConsoleUI != null && gameConsoleUI.gameObject != null) gameConsoleUI.gameObject.SetActive(false);
-        if (combatUICanvas != null) combatUICanvas.SetActive(false);
-        Debug.Log("GameManager: All primary UI canvases/GameObjects deactivated.", this);
-
+        characterCreationCanvas?.SetActive(false);
+        combatUICanvas?.SetActive(false);
+        gameConsoleUI?.gameObject.SetActive(false);
+        playerStatusUI?.gameObject.SetActive(false);
 
         switch (CurrentState)
         {
-            case GameState.CharacterCreation:
-                Debug.Log("GameManager: Setting up CharacterCreation state.", this);
-                if (characterCreationCanvas != null)
-                {
-                    characterCreationCanvas.SetActive(true);
-                    Debug.Log($"GameManager: CharacterCreationCanvas activated. ActiveSelf: {characterCreationCanvas.activeSelf}", this);
-                }
-                else Debug.LogError("GameManager: characterCreationCanvas is NULL when trying to activate for CharacterCreation state!", this);
-                Cursor.lockState = CursorLockMode.None;
-                Cursor.visible = true;
-                break;
-
+            case GameState.CharacterCreation: characterCreationCanvas?.SetActive(true); Cursor.lockState = CursorLockMode.None; Cursor.visible = true; break;
             case GameState.Playing:
-                Debug.Log("GameManager: Setting up Playing state.", this);
-                if (gameConsoleUI != null && gameConsoleUI.gameObject != null)
-                {
-                    gameConsoleUI.gameObject.SetActive(true);
-                    Debug.Log($"GameManager: gameConsoleUI.gameObject activated. ActiveSelf: {gameConsoleUI.gameObject.activeSelf}", this);
-
-                    if (!gameConsoleUI.IsInitialized)
-                    {
-                        Debug.Log("GameManager: GameConsoleUI is not initialized. Calling InitializeConsole().", this);
-                        gameConsoleUI.InitializeConsole();
-                    }
-                    else
-                    {
-                        Debug.Log("GameManager: GameConsoleUI is already initialized. Calling ReFocusInputField().", this);
-                        gameConsoleUI.ReFocusInputField();
-                        if (previousState == GameState.Combat && locationManager != null && locationManager.CurrentLocation != null)
-                        {
-                            if (commandParser != null)
-                            {
-                                Debug.Log("GameManager: Returning from combat. Displaying current location.", this);
-                                gameConsoleUI.AddMessageToOutput(commandParser.ParseCommand("look"));
-                            }
-                            else Debug.LogWarning("GameManager: CommandParser is null, cannot display location after combat.", this);
-                        }
-                    }
+                gameConsoleUI?.gameObject.SetActive(true); if (gameConsoleUI != null && !gameConsoleUI.IsInitialized) gameConsoleUI.InitializeConsole(); else gameConsoleUI?.ReFocusInputField();
+                playerStatusUI?.gameObject.SetActive(true); playerStatusUI?.TryInitializeAndRefresh();
+                if (justFinishedCombat)
+                { /* ... combat summary display ... */
+                    gameConsoleUI?.AddMessageToOutput("--------------------");
+                    if (slainEnemyNames.Any()) { gameConsoleUI.AddMessageToOutput("Enemies Slain:"); foreach (string n in slainEnemyNames) gameConsoleUI.AddMessageToOutput("- " + n); }
+                    if (lastCombatItemNamesDropped.Any()) { gameConsoleUI.AddMessageToOutput("Loot Obtained:"); foreach (string i in lastCombatItemNamesDropped) gameConsoleUI.AddMessageToOutput("- " + i); }
+                    if (lastCombatGoldDropped > 0) gameConsoleUI.AddMessageToOutput($"You found {lastCombatGoldDropped} gold coins.");
+                    if (lastCombatTotalXPGained > 0) gameConsoleUI.AddMessageToOutput($"You gained {lastCombatTotalXPGained} experience.");
+                    gameConsoleUI?.AddMessageToOutput("--------------------");
+                    justFinishedCombat = false; slainEnemyNames.Clear(); lastCombatTotalXPGained = 0; lastCombatGoldDropped = 0; lastCombatItemNamesDropped.Clear();
                 }
-                else Debug.LogError("GameManager: gameConsoleUI or gameConsoleUI.gameObject is NULL when trying to activate for Playing state!", this);
+                if (locationManager?.CurrentLocation != null && commandParser != null) gameConsoleUI?.AddMessageToOutput(commandParser.ParseCommand("look"));
                 break;
-
             case GameState.Combat:
-                Debug.Log("GameManager: Setting up Combat state.", this);
-                if (combatUICanvas != null)
-                {
-                    combatUICanvas.SetActive(true);
-                    Debug.Log($"GameManager: CombatUICanvas activated. ActiveSelf: {combatUICanvas.activeSelf}", this);
-                }
-                else Debug.LogWarning("GameManager: combatUICanvas is NULL. Combat will proceed without dedicated UI.", this);
-
-                if (gameConsoleUI != null)
-                {
-                    gameConsoleUI.AddMessageToOutput("--- COMBAT STARTED ---");
-                    foreach (var enemy in CurrentEnemiesInCombat)
-                    {
-                        gameConsoleUI.AddMessageToOutput($"You face a {enemy.Name} ({enemy.CurrentHealth}/{enemy.MaxHealth} HP)!");
-                    }
-                }
-                break;
-
-            case GameState.Paused:
-                Debug.Log("GameManager: Setting up Paused state.", this);
+                combatUICanvas?.SetActive(true); combatLogger?.ClearLogInstantly();
+                playerStatusUI?.gameObject.SetActive(true); playerStatusUI?.TryInitializeAndRefresh();
+                if (combatSequenceCoroutine != null) StopCoroutine(combatSequenceCoroutine);
+                combatSequenceCoroutine = StartCoroutine(CombatStartSequence());
                 break;
         }
-        Debug.Log($"GameManager: ChangeState to {CurrentState} completed.", this);
     }
 
-    public void FinishCharacterCreation(string playerName, PlayerRace race, PlayerClass playerClass, PlayerOrigin origin, Attributes attributes)
+    public void FinishCharacterCreation(string playerName, PlayerRace race, PlayerClass playerClass, PlayerOrigin origin, Attributes attributes) // PUBLIC
     {
-        Debug.Log($"GameManager: FinishCharacterCreation called. Name: {playerName}, Race: {race}, Class: {playerClass}, Origin: {origin}", this);
-        if (player == null)
-        {
-            Debug.LogError("GameManager: Player reference is NULL in FinishCharacterCreation. Cannot initialize player. Aborting transition to Playing state.", this);
-            return;
-        }
+        if (player == null) return;
         player.InitializePlayer(playerName, race, playerClass, origin, attributes);
-        Debug.Log("GameManager: Player initialized. Attempting to change state to Playing.", this);
+        playerStatusUI?.TryInitializeAndRefresh();
         ChangeState(GameState.Playing);
     }
 
-    public void StartCombat(List<Enemy> enemiesToFight)
+    public void StartCombat(List<Enemy> enemiesToFight) // PUBLIC
     {
-        Debug.Log("GameManager: StartCombat called.", this);
-        if (CurrentState == GameState.Combat)
-        {
-            Debug.LogWarning("GameManager: StartCombat called while already in combat. Ignoring.", this);
-            return;
-        }
-        if (enemiesToFight == null || enemiesToFight.Count == 0)
-        {
-            Debug.LogWarning("GameManager: StartCombat called with no enemies. No combat initiated.", this);
-            return;
-        }
-
+        if (CurrentState == GameState.Combat && CurrentEnemiesInCombat.Any(e => e != null && !e.IsDefeated())) return;
+        if (enemiesToFight == null) return;
         CurrentEnemiesInCombat.Clear();
-        CurrentEnemiesInCombat.AddRange(enemiesToFight);
-
-        Debug.Log($"GameManager: Starting combat with {enemiesToFight.Count} enemies. First enemy: {enemiesToFight[0].Name}", this);
+        CurrentEnemiesInCombat.AddRange(enemiesToFight.Where(e => e != null && !e.IsDefeated()));
+        if (!CurrentEnemiesInCombat.Any()) { if (CurrentState == GameState.Combat) ChangeState(GameState.Playing); return; }
         ChangeState(GameState.Combat);
     }
 
-    public void EndCombat(bool playerWon)
+    private IEnumerator CombatStartSequence()
     {
-        Debug.Log($"GameManager: EndCombat called. PlayerWon: {playerWon}", this);
-        if (CurrentState != GameState.Combat)
+        LogToCombatOrGameConsole("--- COMBAT STARTED ---");
+        yield return new WaitForSeconds(delayAfterCombatMessage);
+        if (CurrentEnemiesInCombat.Any(e => e != null && !e.IsDefeated()))
         {
-            Debug.LogWarning("GameManager: EndCombat called when not in combat state. Current state: " + CurrentState, this);
-            ChangeState(GameState.Playing);
-            return;
+            foreach (var en in CurrentEnemiesInCombat.Where(e => e != null && !e.IsDefeated()))
+            {
+                LogToCombatOrGameConsole($"You face {en.Name} ({en.CurrentHealth}/{en.MaxHealth}HP)!");
+                // Wait for current line to type out before showing next enemy
+                while (combatLogger != null && combatLogger.IsTyping()) yield return null;
+                yield return new WaitForSeconds(delayBetweenActions * 0.3f); // Shorter delay between enemy intros
+            }
         }
+        else
+        {
+            LogToCombatOrGameConsole("No active enemies."); yield return new WaitForSeconds(delayBetweenActions); EndCombat(true); yield break;
+        }
+        LogToCombatOrGameConsole("--- Your Turn ---");
+    }
 
-        string combatEndMessage;
+    public void ProcessPlayerCombatAction(CombatActionType action) // PUBLIC
+    {
+        if (CurrentState != GameState.Combat || player == null || player.CurrentHealth <= 0) { CheckCombatEnd(); return; }
+        if (combatSequenceCoroutine != null) StopCoroutine(combatSequenceCoroutine);
+        combatSequenceCoroutine = StartCoroutine(PlayerActionSequence(action));
+    }
+
+    private IEnumerator PlayerActionSequence(CombatActionType action)
+    {
+        bool consumedTurn = false;
+        switch (action)
+        {
+            case CombatActionType.ATTACK: Enemy t = CurrentEnemiesInCombat.FirstOrDefault(e => e != null && !e.IsDefeated()); if (t != null) { yield return StartCoroutine(PlayerAttackEnemySequence(t)); consumedTurn = true; } else LogToCombatOrGameConsole("No enemies!"); break;
+            case CombatActionType.CAST: LogToCombatOrGameConsole("Spells not implemented."); yield return WaitWhileTyping(); break; // Wait for msg
+            case CombatActionType.ITEM: LogToCombatOrGameConsole("Items not implemented."); yield return WaitWhileTyping(); break; // Wait for msg
+            case CombatActionType.FLEE: yield return StartCoroutine(AttemptFleeSequence()); consumedTurn = false; break; // Flee handles its own turn flow
+        }
+        if (consumedTurn && CurrentState == GameState.Combat)
+        {
+            yield return WaitWhileTyping(); // Wait for player action result to type
+            yield return new WaitForSeconds(delayBetweenActions);
+            if (player.CurrentHealth > 0 && CurrentEnemiesInCombat.Any(e => e != null && !e.IsDefeated()))
+            {
+                if (combatSequenceCoroutine != null) StopCoroutine(combatSequenceCoroutine);
+                combatSequenceCoroutine = StartCoroutine(EnemyTurnSequence());
+            }
+            else CheckCombatEnd();
+        }
+    }
+
+    private IEnumerator WaitWhileTyping() // Helper coroutine
+    {
+        if (combatLogger != null)
+        {
+            while (combatLogger.IsTyping()) yield return null;
+        }
+    }
+
+    private IEnumerator PlayerAttackEnemySequence(Enemy target)
+    {
+        if (player == null || target == null) { CheckCombatEnd(); yield break; }
+        int dmg = Mathf.Max(1, Random.Range(player.Attributes.Strength, player.Attributes.Strength + 5));
+        LogToCombatOrGameConsole($"{player.PlayerName} attacks {target.Name} for {dmg} damage!");
+        yield return WaitWhileTyping();
+        target.TakeDamage(dmg);
+        if (target.IsDefeated()) LogToCombatOrGameConsole($"{target.Name} defeated!");
+        else LogToCombatOrGameConsole($"{target.Name} HP: {target.CurrentHealth}/{target.MaxHealth}");
+        yield return WaitWhileTyping();
+        CheckCombatEnd();
+    }
+
+    private IEnumerator EnemyTurnSequence()
+    {
+        if (CurrentState != GameState.Combat || player == null || player.CurrentHealth <= 0) { CheckCombatEnd(); yield break; }
+        LogToCombatOrGameConsole("--- Enemy Turn ---");
+        yield return WaitWhileTyping(); yield return new WaitForSeconds(delayBetweenActions * 0.5f);
+        bool pAlive = true;
+        foreach (Enemy en in CurrentEnemiesInCombat.Where(e => e != null && !e.IsDefeated()).ToList())
+        {
+            if (player.CurrentHealth <= 0) { pAlive = false; break; }
+            LogToCombatOrGameConsole($"{en.Name} prepares..."); yield return WaitWhileTyping(); yield return new WaitForSeconds(delayBetweenActions * 0.5f);
+            int dmg = en.PerformAttack(); player.TakeDamage(dmg);
+            LogToCombatOrGameConsole($"{en.Name} attacks! You take {dmg} from {en.Name}! HP: {player.CurrentHealth}/{player.MaxHealth}");
+            yield return WaitWhileTyping();
+            if (player.CurrentHealth <= 0) { LogToCombatOrGameConsole("You are defeated!"); yield return WaitWhileTyping(); pAlive = false; break; }
+            yield return new WaitForSeconds(delayBetweenActions);
+        }
+        CheckCombatEnd();
+        if (CurrentState == GameState.Combat && pAlive) LogToCombatOrGameConsole("--- Your Turn ---");
+    }
+
+    private IEnumerator AttemptFleeSequence()
+    {
+        LogToCombatOrGameConsole("You attempt to flee..."); yield return WaitWhileTyping(); yield return new WaitForSeconds(delayBetweenActions);
+        if (Random.Range(0f, 1f) <= 0.75f) { LogToCombatOrGameConsole("...successfully escaped!"); yield return WaitWhileTyping(); yield return new WaitForSeconds(delayAfterCombatMessage); EndCombat(false); }
+        else
+        {
+            LogToCombatOrGameConsole("...but fail!"); yield return WaitWhileTyping(); yield return new WaitForSeconds(delayBetweenActions);
+            if (CurrentState == GameState.Combat) { if (combatSequenceCoroutine != null) StopCoroutine(combatSequenceCoroutine); combatSequenceCoroutine = StartCoroutine(EnemyTurnSequence()); }
+        }
+    }
+
+    public void EndCombat(bool playerWon) // PUBLIC
+    {
+        Debug.Log($"GM: EndCombat. Won: {playerWon}.", this);
+        if (combatSequenceCoroutine != null) { StopCoroutine(combatSequenceCoroutine); combatSequenceCoroutine = null; }
+        slainEnemyNames.Clear(); lastCombatTotalXPGained = 0; lastCombatGoldDropped = 0; lastCombatItemNamesDropped.Clear();
+        justFinishedCombat = true;
+        combatUICanvas?.SetActive(false);
+        // if (CurrentState != GameState.Combat && playerWon) { Debug.LogWarning("EndCombat: Won but not in Combat."); } // Simplified
+        // else if (CurrentState != GameState.Combat && !playerWon) { Debug.Log("EndCombat: Lost/Fled and not in Combat."); }
+
+        string immediateLogMsg;
         if (playerWon)
         {
-            int totalExpGained = 0;
-            foreach (Enemy enemy in CurrentEnemiesInCombat)
-            {
-                if (enemy.IsDefeated())
+            int goldThisFight = 0; List<Item> itemsThisFight = new List<Item>();
+            foreach (Enemy en in CurrentEnemiesInCombat) if (en != null && en.IsDefeated())
                 {
-                    totalExpGained += enemy.ExperienceReward;
+                    lastCombatTotalXPGained += en.ExperienceReward; slainEnemyNames.Add(en.Name);
+                    int goldFromEn; List<Item> itemsFromEn = en.GetDroppedLoot(out goldFromEn);
+                    if (goldFromEn > 0) goldThisFight += goldFromEn; if (itemsFromEn.Any()) itemsThisFight.AddRange(itemsFromEn);
                 }
-            }
-            if (player != null)
-            {
-                player.GainExperience(totalExpGained);
-            }
-            else Debug.LogError("GameManager: Player is NULL in EndCombat. Cannot award experience.", this);
-            combatEndMessage = $"You are victorious! You gained {totalExpGained} experience.";
+            lastCombatGoldDropped = goldThisFight; // This is where goldThisFight is used
+            lastCombatItemNamesDropped = itemsThisFight.Select(item => item.Name + (item.IsStackable && item.Quantity > 1 ? $" (x{item.Quantity})" : "")).ToList();
+            if (player != null) { player.GainExperience(lastCombatTotalXPGained); if (goldThisFight > 0) player.AddGold(goldThisFight); foreach (Item itm in itemsThisFight) player.AddItemToInventory(itm); }
+            immediateLogMsg = "You are victorious!";
+            if (!string.IsNullOrEmpty(playerLastLocationID) && locationManager != null) { if (!locationManager.SetCurrentLocation(playerLastLocationID)) locationManager.SetCurrentLocation(townRespawnLocationID); }
+            else { if (locationManager != null) locationManager.SetCurrentLocation(townRespawnLocationID); }
         }
         else
         {
-            combatEndMessage = "You have been defeated...";
+            if (player != null && player.CurrentHealth <= 0) { immediateLogMsg = "You have been defeated..."; player.RestoreToMaxStats(); if (locationManager != null) if (!locationManager.SetCurrentLocation(townRespawnLocationID)) LogToCombatOrGameConsole("Could not respawn.", true); }
+            else { immediateLogMsg = "Combat ended."; }
         }
-
-        if (gameConsoleUI != null)
-        {
-            gameConsoleUI.AddMessageToOutput(combatEndMessage);
-            gameConsoleUI.AddMessageToOutput("--- COMBAT ENDED ---");
-        }
-
+        LogToCombatOrGameConsole(immediateLogMsg, true); LogToCombatOrGameConsole("--- COMBAT ENDED ---", true);
         CurrentEnemiesInCombat.Clear();
-        GameState targetState = (previousState == GameState.Combat || previousState == GameState.CharacterCreation) ? GameState.Playing : previousState;
-        Debug.Log($"GameManager: Combat ended. Transitioning to state: {targetState}", this);
-        ChangeState(targetState);
+        ChangeState(GameState.Playing);
     }
 
-    public void TryToTriggerEncounter(Location location)
+    private void CheckCombatEnd()
     {
-        if (location == null)
-        {
-            Debug.LogWarning("GameManager: TryToTriggerEncounter called with null location.", this);
-            return;
-        }
-        Debug.Log($"GameManager: TryToTriggerEncounter called for location: {location.Name}. Current state: {CurrentState}", this);
-        if (CurrentState != GameState.Playing)
-        {
-            Debug.Log("GameManager: Not in Playing state, encounter check skipped.", this);
-            return;
-        }
+        if (CurrentState != GameState.Combat) return;
+        bool pDefeated = player != null && player.CurrentHealth <= 0;
+        bool activeEnemies = CurrentEnemiesInCombat.Any(e => e != null && !e.IsDefeated());
+        if (pDefeated) { if (combatSequenceCoroutine != null) StopCoroutine(combatSequenceCoroutine); EndCombat(false); }
+        else if (!activeEnemies && CurrentEnemiesInCombat.Any()) { if (combatSequenceCoroutine != null) StopCoroutine(combatSequenceCoroutine); EndCombat(true); }
+    }
 
+    public void TryToTriggerEncounter(Location location) // PUBLIC
+    {
+        if (location == null || CurrentState != GameState.Playing) return;
         List<Enemy> encounterPack = location.GetEncounterPack();
-        if (encounterPack.Count > 0)
+        if (encounterPack.Any())
         {
-            Debug.Log($"GameManager: Encounter triggered in {location.Name}! {encounterPack.Count} enemies.", this);
-            if (gameConsoleUI != null)
-            {
-                gameConsoleUI.AddMessageToOutput($"You are ambushed by enemies in {location.Name}!");
-            }
+            // Log ambush message to main console BEFORE state change to Combat
+            if (gameConsoleUI?.gameObject.activeInHierarchy == true) gameConsoleUI.AddMessageToOutput($"You are ambushed in {location.Name}!");
+            else Debug.Log($"Ambushed in {location.Name}!"); // Fallback log
             StartCombat(encounterPack);
         }
-        else
-        {
-            Debug.Log($"GameManager: No encounter triggered in {location.Name} (either no pack or chance failed).", this);
-        }
     }
+
+    private void LogToCombatOrGameConsole(string message, bool combatLogPriority = false)
+    {
+        if (CurrentState == GameState.Combat && combatLogger != null)
+        {
+            combatLogger.AddMessage(message);
+        }
+        else if (gameConsoleUI?.gameObject.activeInHierarchy == true)
+        {
+            gameConsoleUI.AddMessageToOutput(message);
+        }
+        else if (gameConsoleUI != null)
+        {
+            gameConsoleUI.AddMessageToOutput(message); Debug.Log($"GameConsoleUI (inactive): {message}", this);
+        }
+        else { Debug.Log($"General Log (No UI): {message}", this); }
+    }
+    public void SendMessageToPlayerLog(string message) { LogToCombatOrGameConsole(message, false); } // PUBLIC
 }
