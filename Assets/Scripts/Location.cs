@@ -109,22 +109,25 @@ public class Location
             return encounterPack;
         }
 
-        int numberOfEnemies = Random.Range(1, MaxEnemiesInLocation + 1);
+        int numberOfEnemies = 1;
         // Debug.Log($"Location ({Name}): Encounter SUCCESS! Generating {numberOfEnemies} enemies.", null);
 
-        for (int i = 0; i < numberOfEnemies; i++)
+        for (int i = 0; i < numberOfEnemies; i++) // This loop will now just execute once
         {
-            EnemyType randomType = PossibleEnemyTypes[Random.Range(0, PossibleEnemyTypes.Count)];
-            Enemy newEnemy = CreateEnemyFromType(randomType);
-            if (newEnemy != null)
+            if (PossibleEnemyTypes.Count > 0) // Should always be true if we passed the initial check
             {
-                encounterPack.Add(newEnemy);
+                EnemyType randomType = PossibleEnemyTypes[Random.Range(0, PossibleEnemyTypes.Count)];
+                Enemy newEnemy = CreateEnemyFromType(randomType);
+                if (newEnemy != null)
+                {
+                    encounterPack.Add(newEnemy);
+                }
+                else
+                {
+                    Debug.LogWarning($"Location ({Name}): GetEncounterPack failed to create enemy instance for type: {randomType}.", null);
+                }
             }
-            else
-            {
-                Debug.LogWarning($"Location ({Name}): Failed to create enemy instance for type: {randomType}.", null);
-            }
-        }
+        }   
         return encounterPack;
     }
 
@@ -144,7 +147,8 @@ public class Location
                 newEnemy = new Enemy("Goblin Scavenger", type,
                                     new Attributes(str: 6, agi: 7, intel: 3, sta: 4, wis: 2, fur: 4, end: 4, fai: 1),
                                     2, 4, 10, // minDmg, maxDmg, xp
-                                    1, 5);   // minGold, maxGold
+                                    1, 5,    // minGold, maxGold
+                                    1);     // level
                 newEnemy.AddLoot(ItemTemplates.GoblinEar, 0.6f, 1, 2);  // 60% chance, 1-2 ears
                 newEnemy.AddLoot(ItemTemplates.CrustyBread, 0.15f);     // 15% chance for bread
                 // Debug.Log($"Creating Goblin. Gold: {newEnemy.MinGoldDrop}-{newEnemy.MaxGoldDrop}, Loot Count: {newEnemy.PotentialLoot.Count}", null);
@@ -156,7 +160,8 @@ public class Location
                 newEnemy = new Enemy("Forest Wolf", type,
                                     new Attributes(str: 7, agi: 8, intel: 2, sta: 6, wis: 2, fur: 5, end: 6, fai: 1),
                                     3, 6, 15, // minDmg, maxDmg, xp
-                                    3, 10);  // minGold, maxGold
+                                    3, 10,   // minGold, maxGold
+                                    1);     // level
                 newEnemy.AddLoot(ItemTemplates.WolfPelt, 0.70f);        // 70% chance for a pelt
                 // Debug.Log($"Creating Wolf. Gold: {newEnemy.MinGoldDrop}-{newEnemy.MaxGoldDrop}, Loot Count: {newEnemy.PotentialLoot.Count}", null);
                 break;
@@ -167,7 +172,8 @@ public class Location
                 newEnemy = new Enemy("Giant Forest Spider", type,
                                     new Attributes(str: 5, agi: 9, intel: 2, sta: 5, wis: 1, fur: 3, end: 4, fai: 1),
                                     2, 5, 12, // minDmg, maxDmg, xp
-                                    2, 7);   // minGold, maxGold
+                                    2, 7,    // minGold, maxGold
+                                    1);     // level
                 newEnemy.AddLoot(ItemTemplates.SpiderSilk, 0.5f, 1, 3); // 50% chance for 1-3 silk
                 // Debug.Log($"Creating Spider. Gold: {newEnemy.MinGoldDrop}-{newEnemy.MaxGoldDrop}, Loot Count: {newEnemy.PotentialLoot.Count}", null);
                 break;
@@ -177,8 +183,9 @@ public class Location
                 // Gold: 10-25. Loot: Bandit Masks, sometimes potions or more valuable vendor trash.
                 newEnemy = new Enemy("Road Bandit", type,
                                     new Attributes(str: 8, agi: 7, intel: 5, sta: 7, wis: 4, fur: 5, end: 5, fai: 3),
-                                    4, 7, 20,  // minDmg, maxDmg, xp
-                                    10, 25);   // minGold, maxGold
+                                    4, 7, 20,    // minDmg, maxDmg, xp
+                                    10, 25,     // minGold, maxGold
+                                    1);        // level   
                 newEnemy.AddLoot(ItemTemplates.BanditMask, 0.20f);          // 20% chance for mask
                 newEnemy.AddLoot(ItemTemplates.MinorHealingPotion, 0.10f);  // 10% chance for potion
                 // Debug.Log($"Creating Bandit. Gold: {newEnemy.MinGoldDrop}-{newEnemy.MaxGoldDrop}, Loot Count: {newEnemy.PotentialLoot.Count}", null);

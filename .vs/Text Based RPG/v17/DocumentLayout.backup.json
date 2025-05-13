@@ -3,12 +3,20 @@
   "WorkspaceRootPath": "C:\\Users\\Cade1\\OneDrive\\Desktop\\Games\\Text Based RPG\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Cade1\\OneDrive\\Desktop\\Games\\Text Based RPG\\Assets\\Scripts\\PlayerStatusUI.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Assets\\Scripts\\PlayerStatusUI.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Cade1\\OneDrive\\Desktop\\Games\\Text Based RPG\\Assets\\Scripts\\GameManager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Assets\\Scripts\\GameManager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Cade1\\OneDrive\\Desktop\\Games\\Text Based RPG\\Assets\\Scripts\\CombatLoggerUI.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Assets\\Scripts\\CombatLoggerUI.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Cade1\\OneDrive\\Desktop\\Games\\Text Based RPG\\Assets\\Scripts\\LocationManager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Assets\\Scripts\\LocationManager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Cade1\\OneDrive\\Desktop\\Games\\Text Based RPG\\Assets\\Scripts\\PlayerStatusUI.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Assets\\Scripts\\PlayerStatusUI.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Cade1\\OneDrive\\Desktop\\Games\\Text Based RPG\\Assets\\Scripts\\Attributes.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -41,14 +49,6 @@
     {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Cade1\\OneDrive\\Desktop\\Games\\Text Based RPG\\Assets\\Scripts\\CharacterCreationUI.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Assets\\Scripts\\CharacterCreationUI.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Cade1\\OneDrive\\Desktop\\Games\\Text Based RPG\\Assets\\Scripts\\LocationManager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Assets\\Scripts\\LocationManager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Cade1\\OneDrive\\Desktop\\Games\\Text Based RPG\\Assets\\Scripts\\CombatLoggerUI.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Assets\\Scripts\\CombatLoggerUI.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Cade1\\OneDrive\\Desktop\\Games\\Text Based RPG\\Assets\\Scripts\\GameState.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -93,11 +93,11 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 1,
+          "SelectedChildIndex": 8,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 4,
               "Title": "Attributes.cs",
               "DocumentMoniker": "C:\\Users\\Cade1\\OneDrive\\Desktop\\Games\\Text Based RPG\\Assets\\Scripts\\Attributes.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\Attributes.cs",
@@ -105,12 +105,11 @@
               "RelativeToolTip": "Assets\\Scripts\\Attributes.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAACgAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-05-11T06:29:59.532Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-05-11T06:29:59.532Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 3,
               "Title": "PlayerStatusUI.cs",
               "DocumentMoniker": "C:\\Users\\Cade1\\OneDrive\\Desktop\\Games\\Text Based RPG\\Assets\\Scripts\\PlayerStatusUI.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\PlayerStatusUI.cs",
@@ -123,7 +122,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 6,
               "Title": "Enemy.cs",
               "DocumentMoniker": "C:\\Users\\Cade1\\OneDrive\\Desktop\\Games\\Text Based RPG\\Assets\\Scripts\\Enemy.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\Enemy.cs",
@@ -131,12 +130,11 @@
               "RelativeToolTip": "Assets\\Scripts\\Enemy.cs",
               "ViewState": "AgIAAAcAAAAAAAAAAAAcwBwAAAAcAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-05-11T05:24:53.952Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-05-11T05:24:53.952Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 8,
+              "DocumentIndex": 10,
               "Title": "Item.cs",
               "DocumentMoniker": "C:\\Users\\Cade1\\OneDrive\\Desktop\\Games\\Text Based RPG\\Assets\\Scripts\\Item.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\Item.cs",
@@ -144,18 +142,17 @@
               "RelativeToolTip": "Assets\\Scripts\\Item.cs",
               "ViewState": "AgIAAAkAAAAAAAAAAAAswDMAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-05-11T05:24:04.941Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-05-11T05:24:04.941Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 11,
+              "DocumentIndex": 1,
               "Title": "CombatLoggerUI.cs",
               "DocumentMoniker": "C:\\Users\\Cade1\\OneDrive\\Desktop\\Games\\Text Based RPG\\Assets\\Scripts\\CombatLoggerUI.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\CombatLoggerUI.cs",
               "ToolTip": "C:\\Users\\Cade1\\OneDrive\\Desktop\\Games\\Text Based RPG\\Assets\\Scripts\\CombatLoggerUI.cs",
               "RelativeToolTip": "Assets\\Scripts\\CombatLoggerUI.cs",
-              "ViewState": "AgIAADEAAAAAAAAAAAAswFsAAAABAAAAAAAAAA==",
+              "ViewState": "AgIAAEMAAAAAAAAAAAAcwGsAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-05-11T04:05:18.317Z",
               "EditorCaption": ""
@@ -170,8 +167,7 @@
               "RelativeToolTip": "Assets\\Scripts\\GameState.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-05-11T03:39:15.659Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-05-11T03:39:15.659Z"
             },
             {
               "$type": "Document",
@@ -183,12 +179,11 @@
               "RelativeToolTip": "Assets\\Scripts\\CombatMenuUI.cs",
               "ViewState": "AgIAAGgAAAAAAAAAAAAswIkAAABLAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-05-11T02:30:56.965Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-05-11T02:30:56.965Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 9,
+              "DocumentIndex": 11,
               "Title": "CharacterCreationUI.cs",
               "DocumentMoniker": "C:\\Users\\Cade1\\OneDrive\\Desktop\\Games\\Text Based RPG\\Assets\\Scripts\\CharacterCreationUI.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\CharacterCreationUI.cs",
@@ -196,18 +191,17 @@
               "RelativeToolTip": "Assets\\Scripts\\CharacterCreationUI.cs",
               "ViewState": "AgIAAB4BAAAAAAAAAAAgwEMBAAAJAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-05-06T16:49:15.943Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-05-06T16:49:15.943Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 0,
               "Title": "GameManager.cs",
               "DocumentMoniker": "C:\\Users\\Cade1\\OneDrive\\Desktop\\Games\\Text Based RPG\\Assets\\Scripts\\GameManager.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\GameManager.cs",
               "ToolTip": "C:\\Users\\Cade1\\OneDrive\\Desktop\\Games\\Text Based RPG\\Assets\\Scripts\\GameManager.cs",
               "RelativeToolTip": "Assets\\Scripts\\GameManager.cs",
-              "ViewState": "AgIAANUAAAAAAAAAAAAswAcBAAABAAAAAAAAAA==",
+              "ViewState": "AgIAAAMBAAAAAAAAAAAIwCsBAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-05-06T16:24:27.864Z",
               "EditorCaption": ""
@@ -226,7 +220,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
+              "DocumentIndex": 7,
               "Title": "CommandParser.cs",
               "DocumentMoniker": "C:\\Users\\Cade1\\OneDrive\\Desktop\\Games\\Text Based RPG\\Assets\\Scripts\\CommandParser.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\CommandParser.cs",
@@ -234,25 +228,24 @@
               "RelativeToolTip": "Assets\\Scripts\\CommandParser.cs",
               "ViewState": "AgIAAJ4AAAAAAAAAAAAswMgAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-05-06T14:35:54.062Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-05-06T14:35:54.062Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 10,
+              "DocumentIndex": 2,
               "Title": "LocationManager.cs",
               "DocumentMoniker": "C:\\Users\\Cade1\\OneDrive\\Desktop\\Games\\Text Based RPG\\Assets\\Scripts\\LocationManager.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\LocationManager.cs",
               "ToolTip": "C:\\Users\\Cade1\\OneDrive\\Desktop\\Games\\Text Based RPG\\Assets\\Scripts\\LocationManager.cs",
               "RelativeToolTip": "Assets\\Scripts\\LocationManager.cs",
-              "ViewState": "AgIAAHwAAAAAAAAAAAAswKAAAAAFAAAAAAAAAA==",
+              "ViewState": "AgIAAHkAAAAAAAAAAAAMwI0AAABzAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-05-06T14:31:03.922Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 6,
+              "DocumentIndex": 8,
               "Title": "Location.cs",
               "DocumentMoniker": "C:\\Users\\Cade1\\OneDrive\\Desktop\\Games\\Text Based RPG\\Assets\\Scripts\\Location.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\Location.cs",
@@ -260,12 +253,11 @@
               "RelativeToolTip": "Assets\\Scripts\\Location.cs",
               "ViewState": "AgIAAJoAAAAAAAAAAAAswMQAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-05-06T14:30:31.505Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-05-06T14:30:31.505Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 5,
               "Title": "Player.cs",
               "DocumentMoniker": "C:\\Users\\Cade1\\OneDrive\\Desktop\\Games\\Text Based RPG\\Assets\\Scripts\\Player.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\Player.cs",
@@ -273,8 +265,7 @@
               "RelativeToolTip": "Assets\\Scripts\\Player.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAA0AAAA2AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-05-06T14:18:15.721Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-05-06T14:18:15.721Z"
             },
             {
               "$type": "Document",
@@ -302,7 +293,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 7,
+              "DocumentIndex": 9,
               "Title": "EnemyType.cs",
               "DocumentMoniker": "C:\\Users\\Cade1\\OneDrive\\Desktop\\Games\\Text Based RPG\\Assets\\Scripts\\EnemyType.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\EnemyType.cs",
@@ -310,8 +301,7 @@
               "RelativeToolTip": "Assets\\Scripts\\EnemyType.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAkAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-05-06T23:28:10.281Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-05-06T23:28:10.281Z"
             },
             {
               "$type": "Document",
@@ -335,8 +325,7 @@
               "RelativeToolTip": "Assets\\Scripts\\CombatActionType.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAcAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-05-11T02:09:34.775Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-05-11T02:09:34.775Z"
             },
             {
               "$type": "Document",

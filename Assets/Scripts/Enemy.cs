@@ -26,7 +26,8 @@ public class Enemy
 {
     public string Name;
     public EnemyType Type;
-    public Attributes Stats;
+    public Attributes Stats;    
+    public int Level { get; private set; }
 
     public int CurrentHealth;
     public int MaxHealth;
@@ -42,11 +43,12 @@ public class Enemy
     public List<LootDrop> PotentialLoot; // List of items this enemy can drop
 
     public Enemy(string name, EnemyType type, Attributes stats, int minDamage, int maxDamage, int experienceReward,
-                 int minGold = 0, int maxGold = 0) // Added gold params
+                 int minGold = 0, int maxGold = 0, int level = 1) // Added gold params
     {
         Name = name;
         Type = type;
         Stats = stats;
+        Level = level;
 
         MaxHealth = Stats.Stamina * 10; // Assuming 10 is your health per stamina point
         CurrentHealth = MaxHealth;

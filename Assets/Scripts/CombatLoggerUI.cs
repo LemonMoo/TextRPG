@@ -13,7 +13,7 @@ public class CombatLoggerUI : MonoBehaviour
 
     [Header("Log Settings")]
     public int maxLogLines = 50;
-    public float characterTypeDelay = 0.03f;
+    public float characterTypeDelay = 0.0015f;
 
     private List<string> logMessages = new List<string>();
     private Coroutine currentTypewriterCoroutine;
